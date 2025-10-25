@@ -1,0 +1,207 @@
+/* Product Loader Styles */
+.product-loader-container {
+  width: 100%;
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border-radius: 20px;
+  margin: 20px 0;
+}
+
+.product-loader-content {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+}
+
+/* Grid de skeleton cards */
+.product-loader-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  width: 100%;
+  opacity: 0.6;
+}
+
+.product-skeleton-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.skeleton-image {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%);
+  background-size: 200% 100%;
+  border-radius: 15px;
+  margin-bottom: 15px;
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-title {
+  height: 20px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%);
+  background-size: 200% 100%;
+  border-radius: 10px;
+  width: 80%;
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-price {
+  height: 18px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%);
+  background-size: 200% 100%;
+  border-radius: 10px;
+  width: 60%;
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-rating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skeleton-stars {
+  height: 16px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  width: 100px;
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-button {
+  height: 40px;
+  background: linear-gradient(90deg, rgba(102, 126, 234, 0.2) 25%, rgba(102, 126, 234, 0.3) 50%, rgba(102, 126, 234, 0.2) 75%);
+  background-size: 200% 100%;
+  border-radius: 20px;
+  width: 100%;
+  margin-top: 10px;
+  animation: shimmer 2s infinite;
+}
+
+/* Texto del loader */
+.loader-text {
+  text-align: center;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loader-text h3 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.loader-text p {
+  font-size: 16px;
+  margin: 0;
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+/* Animaciones */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .product-loader-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+  
+  .product-skeleton-card {
+    padding: 15px;
+  }
+  
+  .skeleton-image {
+    height: 150px;
+  }
+  
+  .loader-text h3 {
+    font-size: 20px;
+  }
+  
+  .loader-text p {
+    font-size: 14px;
+  }
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-loader-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .product-loader-container {
+    padding: 20px 15px;
+  }
+  
+  .skeleton-image {
+    height: 120px;
+  }
+}
