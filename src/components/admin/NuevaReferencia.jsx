@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { FaUserAlt } from 'react-icons/fa'
-import { getTallas } from '../../../api/getTallas'
+//import { getTallas } from '../../../api/getTallas'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 

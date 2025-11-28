@@ -1,259 +1,278 @@
-import React, { useEffect, useState } from 'react'
-import { getProductosCategoria } from '../../api/getProductosCategoria';
-import { Link, useParams } from 'react-router-dom';
-import { Header } from './layout/Header';
-import { FaTshirt, FaShoppingCart, FaTimes, FaPlus, FaMinus, FaHeart, FaShare, FaStar } from 'react-icons/fa';
-import '../styles/css/productosCategoria.css';
+import React, { useEffect, useState } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { Header } from "./layout/Header";
+import { Footer } from "./layout/Footer";
+import { ProductLoader } from "./layout/ProductLoader";
+import { useCarrito } from "../provider/CarritoProvider";
+import { FaTshirt } from "react-icons/fa";
+import "../styles/css/ProductosCategoria.css";
+import { toast } from "react-hot-toast";
 
 export const ProductosCategoria = () => {
+  const { id, categoria } = useParams();
+  const navigate = useNavigate();
+  const { actualizarCarrito, verProductosCarrito, setVerProductosCarrito } = useCarrito();
 
-  const {id} = useParams();
   const [productos, setProductos] = useState([]);
+  const [productosFiltrados, setProductosFiltrados] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  // Modal
   const [modalAbierto, setModalAbierto] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
-  const [tallaSeleccionada, setTallaSeleccionada] = useState(null);
+  const [tallaSeleccionada, setTallaSeleccionada] = useState("");
   const [cantidad, setCantidad] = useState(1);
-  const [imagenActiva, setImagenActiva] = useState(0);
 
-  // Tallas de ejemplo para el frontend
-  const tallasDisponibles = [
-    { id: 1, nombre: 'XS' },
-    { id: 2, nombre: 'S' },
-    { id: 3, nombre: 'M' },
-    { id: 4, nombre: 'L' },
-    { id: 5, nombre: 'XL' },
-    { id: 6, nombre: 'XXL' }
-  ];
-
-  useEffect(() => {
-    getProductosCategoria(id, setProductos);
-  }, [id]);
+  const tallasDisponibles = ["XS", "S", "M", "L", "XL"];
 
   const abrirModal = (producto) => {
-    setModalAbierto(true);
     setProductoSeleccionado(producto);
-    setTallaSeleccionada(null);
+    setModalAbierto(true);
+    setTallaSeleccionada("");
     setCantidad(1);
-    setImagenActiva(0);
   };
 
   const cerrarModal = () => {
     setModalAbierto(false);
     setProductoSeleccionado(null);
-    setTallaSeleccionada(null);
+    setTallaSeleccionada("");
     setCantidad(1);
-    setImagenActiva(0);
   };
 
-  const handleSeleccionTalla = (tallaId) => {
-    setTallaSeleccionada(tallaId);
+  const handleSeleccionarTalla = (talla) => {
+    setTallaSeleccionada(talla);
   };
 
-  const incrementarCantidad = () => {
-    setCantidad(prev => prev + 1);
-  };
-
-  const decrementarCantidad = () => {
-    if (cantidad > 1) {
-      setCantidad(prev => prev - 1);
-    }
+  const handleCambiarCantidad = (operacion) => {
+    if (operacion === "incrementar") setCantidad((prev) => prev + 1);
+    else if (operacion === "decrementar" && cantidad > 1) setCantidad((prev) => prev - 1);
   };
 
   const handleAñadirCarrito = () => {
-    if (tallaSeleccionada === null) {
-      alert('Por favor selecciona una talla');
+    // Validar talla
+    if (!tallaSeleccionada) {
+      toast.error("Por favor selecciona una talla", { position: "top-center" });
       return;
     }
 
-    // Simulación de agregar al carrito (solo frontend)
-    const tallaSeleccionadaNombre = tallasDisponibles.find(t => t.id === tallaSeleccionada)?.nombre;
-    
-    alert(`¡Producto agregado al carrito!
-    
-Producto: ${productoSeleccionado.nombre}
-Talla: ${tallaSeleccionadaNombre}
-Cantidad: ${cantidad}
-Precio total: ${(productoSeleccionado.precio * cantidad).toLocaleString()}`);
+    const isLoggedIn = !!localStorage.getItem("token");
 
+    // USUARIO LOGUEADO → lógica para backend (mantiene compatibilidad)
+    if (isLoggedIn) {
+      const userId = localStorage.getItem("id");
+      const carrito = JSON.parse(localStorage.getItem("carritoFalso") || "[]");
+
+      const productoCarrito = {
+        carrito_id: `fake-${Date.now()}`,
+        id_usuario: userId,
+        cantidad,
+        nombre: productoSeleccionado.title,
+        precio: productoSeleccionado.price,
+        imagen: productoSeleccionado.image,
+        nombre_talla: tallaSeleccionada,
+        producto_id: productoSeleccionado.id,
+      };
+
+      const existeIndex = carrito.findIndex(
+        (item) => item.producto_id === productoSeleccionado.id && item.nombre_talla === tallaSeleccionada
+      );
+
+      if (existeIndex !== -1) {
+        carrito[existeIndex].cantidad += cantidad;
+      } else {
+        carrito.push(productoCarrito);
+      }
+
+      localStorage.setItem("carritoFalso", JSON.stringify(carrito));
+      setVerProductosCarrito(carrito); // Sincroniza con Context
+      actualizarCarrito();
+      toast.success("¡Agregado al carrito!", { position: "top-center" });
+      cerrarModal();
+      return;
+    }
+
+    // USUARIO NO LOGUEADO → usa Context + localStorage
+    const productoParaCarrito = {
+      ...productoSeleccionado,
+      carrito_id: Date.now() + Math.random(), // ID único
+      cantidad,
+      nombre_talla: tallaSeleccionada,
+      title: productoSeleccionado.title,
+      price: productoSeleccionado.price,
+      image: productoSeleccionado.image,
+    };
+
+    const existe = verProductosCarrito.findIndex(
+      (p) => p.id === productoSeleccionado.id && p.nombre_talla === tallaSeleccionada
+    );
+
+    let nuevoCarrito;
+    if (existe !== -1) {
+      nuevoCarrito = verProductosCarrito.map((p, i) =>
+        i === existe ? { ...p, cantidad: p.cantidad + cantidad } : p
+      );
+    } else {
+      nuevoCarrito = [...verProductosCarrito, productoParaCarrito];
+    }
+
+    setVerProductosCarrito(nuevoCarrito); // Actualiza Context → se guarda automáticamente
+    toast.success("¡Agregado al carrito!", { position: "top-center" });
     cerrarModal();
   };
 
+  const filtrarPorCategoria = (categoria) => {
+    setCategoriaSeleccionada(categoria);
+    setProductosFiltrados(productos.filter((p) => p.category === categoria));
+  };
+
+  // Cargar categorías únicas
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        const res = await fetch("https://fakestoreapi.com/products");
+        const data = await res.json();
+        const categoriasUnicas = [...new Set(data.map((p) => p.category))];
+        setCategorias(categoriasUnicas);
+      } catch (error) {
+        console.error("Error cargando categorías:", error);
+      }
+    };
+    fetchCategorias();
+  }, []);
+
+  // Cargar productos filtrados por categoría
+  useEffect(() => {
+    const fetchProductos = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch("https://fakestoreapi.com/products");
+        const data = await res.json();
+
+        if (!categoria) {
+          setProductos([]);
+          setProductosFiltrados([]);
+          setLoading(false);
+          return;
+        }
+
+        const filtrados = data.filter(
+          (p) => p.category && p.category.toLowerCase() === categoria.toLowerCase()
+        );
+
+        setProductos(data);
+        setProductosFiltrados(filtrados);
+        setCategoriaSeleccionada(categoria);
+      } catch (error) {
+        console.error("Error cargando productos:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProductos();
+  }, [categoria]);
+
   return (
-    <div className='productos-categoria-container'>
-      <div className='header'>
-        <Header/>
-        <div className='titulo-seccion'>
-          <h1>Productos para Hombres</h1>
-          <p>Descubre nuestra colección exclusiva</p>
-        </div>
+    <div className="productos-genero-container">
+      <Header />
+
+      <div className="titulo-seccion">
+        <h1>{categoriaSeleccionada || "Productos"}</h1>
+        <p>Explora los mejores productos de esta categoría</p>
       </div>
 
-      <div className='productos-grid'>
-        {productos.length > 0 ? (
-          productos.map((producto) => {
-            const imagen = 'http://127.0.0.1:3001/' + JSON.parse(producto.imagen)[0];
-            return (
-              <div key={producto.id} className='producto-card'>
-                <div className='producto-imagen-container'>
-                  <img src={imagen} alt={producto.nombre} />
-                  <div className='producto-overlay'>
-                    <button 
-                      className='btn-vista-rapida'
-                      onClick={() => abrirModal(producto)}
-                    >
-                      Vista Rápida
-                    </button>
-                    <div className='acciones-producto'>
-                      <button className='btn-favorito'>
-                        <FaHeart />
-                      </button>
-                      <button className='btn-compartir'>
-                        <FaShare />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className='producto-info'>
-                  <h3>{producto.nombre}</h3>
-                  <div className='producto-rating'>
-                    {[...Array(5)].map((_, i) => (
-                      <FaStar key={i} className={i < 4 ? 'star-filled' : 'star-empty'} />
-                    ))}
-                    <span className='rating-text'>(4.0)</span>
-                  </div>
-                  <p className='producto-precio'>${producto.precio}</p>
-                  <Link className='btn-ver-detalle' to={`/producto/${producto.id}`}>
-                    Ver Detalles
-                  </Link>
-                </div>
-              </div>
-            );
-          })
+      <div className="productos-section">
+        <div className="productos-header">
+          <div className="filtros-inline">
+            {categorias.map((cat, i) => (
+              <button
+                key={i}
+                className={`filtro-btn ${categoriaSeleccionada === cat ? "activo" : ""}`}
+                onClick={() => filtrarPorCategoria(cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {loading ? (
+          <ProductLoader />
         ) : (
-          <div className='no-productos'>
-            <FaTshirt className='icono-vacio' />
-            <h3>No hay productos disponibles</h3>
-            <p>Vuelve pronto para ver nuevos productos</p>
+          <div className="productos-grid">
+            {productosFiltrados.length > 0 ? (
+              productosFiltrados.map((producto) => (
+                <div key={producto.id} className="producto-card" onClick={() => abrirModal(producto)}>
+                  <div className="producto-imagen-container">
+                    <img src={producto.image} alt={producto.title} />
+                  </div>
+                  <div className="producto-info">
+                    <h3>{producto.title}</h3>
+                    <p className="producto-precio">${producto.price}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="no-productos">
+                <FaTshirt className="icono-vacio" />
+                <h3>No hay productos disponibles</h3>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Modal de Producto */}
+      {/* Modal */}
       {modalAbierto && productoSeleccionado && (
-        <div className='modal-overlay' onClick={cerrarModal}>
-          <div className='modal-producto' onClick={(e) => e.stopPropagation()}>
-            <button className='btn-cerrar-modal' onClick={cerrarModal}>
-              <FaTimes />
+        <div className="modal-overlay" onClick={cerrarModal}>
+          <div className="modal-contenido" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-cerrar" onClick={cerrarModal}>
+              ×
             </button>
 
-            <div className='modal-contenido'>
-              <div className='modal-imagenes'>
-                <div className='imagen-principal'>
-                  <img 
-                    src={`http://127.0.0.1:3001/${JSON.parse(productoSeleccionado.imagen || '[]')[imagenActiva] || JSON.parse(productoSeleccionado.imagen || '[]')[0]}`}
-                    alt={productoSeleccionado.nombre}
-                  />
+            <div className="modal-imagenes">
+              <img src={productoSeleccionado.image} alt={productoSeleccionado.title} />
+            </div>
+
+            <div className="modal-detalles">
+              <h2>{productoSeleccionado.title}</h2>
+              <p>{productoSeleccionado.description}</p>
+              <p className="precio-modal">${productoSeleccionado.price}</p>
+
+              <div className="selector-tallas">
+                <h4>Seleccionar Talla:</h4>
+                <div className="tallas-grid">
+                  {tallasDisponibles.map((talla) => (
+                    <button
+                      key={talla}
+                      className={`talla-btn ${tallaSeleccionada === talla ? "seleccionada" : ""}`}
+                      onClick={() => handleSeleccionarTalla(talla)}
+                    >
+                      {talla}
+                    </button>
+                  ))}
                 </div>
-                {JSON.parse(productoSeleccionado.imagen || '[]').length > 1 && (
-                  <div className='imagenes-miniatura'>
-                    {JSON.parse(productoSeleccionado.imagen || '[]').map((imagen, index) => (
-                      <img
-                        key={index}
-                        src={`http://127.0.0.1:3001/${imagen}`}
-                        alt={`${productoSeleccionado.nombre} ${index + 1}`}
-                        className={imagenActiva === index ? 'activa' : ''}
-                        onClick={() => setImagenActiva(index)}
-                      />
-                    ))}
-                  </div>
-                )}
               </div>
 
-              <div className='modal-detalles'>
-                <div className='producto-header'>
-                  <h2>{productoSeleccionado.nombre}</h2>
-                  <div className='producto-rating'>
-                    {[...Array(5)].map((_, i) => (
-                      <FaStar key={i} className={i < 4 ? 'star-filled' : 'star-empty'} />
-                    ))}
-                    <span className='rating-text'>(4.0) • 127 reseñas</span>
-                  </div>
-                </div>
-
-                <p className='producto-descripcion'>
-                  {productoSeleccionado.caracteristicas}
-                </p>
-
-                <div className='precio-container'>
-                  <span className='precio-actual'>${productoSeleccionado.precio}</span>
-                  <span className='precio-anterior'>${(productoSeleccionado.precio * 1.2).toFixed(0)}</span>
-                  <span className='descuento'>20% OFF</span>
-                </div>
-
-                <div className='seleccion-talla'>
-                  <h4>Selecciona tu talla:</h4>
-                  <div className='tallas-grid'>
-                    {tallasDisponibles.map((talla) => (
-                      <button
-                        key={talla.id}
-                        className={`talla-btn ${tallaSeleccionada === talla.id ? 'seleccionada' : ''}`}
-                        onClick={() => handleSeleccionTalla(talla.id)}
-                      >
-                        {talla.nombre}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className='seleccion-cantidad'>
-                  <h4>Cantidad:</h4>
-                  <div className='cantidad-controls'>
-                    <button 
-                      className='btn-cantidad'
-                      onClick={decrementarCantidad}
-                      disabled={cantidad <= 1}
-                    >
-                      <FaMinus />
-                    </button>
-                    <span className='cantidad-display'>{cantidad}</span>
-                    <button 
-                      className='btn-cantidad'
-                      onClick={incrementarCantidad}
-                    >
-                      <FaPlus />
-                    </button>
-                  </div>
-                </div>
-
-                <div className='modal-acciones'>
-                  <button 
-                    className='btn-agregar-carrito'
-                    onClick={handleAñadirCarrito}
-                  >
-                    <FaShoppingCart />
-                    Agregar al Carrito
-                  </button>
-                  <button className='btn-favorito-modal'>
-                    <FaHeart />
-                  </button>
-                </div>
-
-                <div className='producto-extras'>
-                  <div className='extra-item'>
-                    <strong>SKU:</strong> {productoSeleccionado.sku}
-                  </div>
-                  <div className='extra-item'>
-                    <strong>Envío:</strong> Gratis en compras mayores a $100.000
-                  </div>
-                  <div className='extra-item'>
-                    <strong>Devoluciones:</strong> 30 días para cambios
-                  </div>
+              <div className="selector-cantidad">
+                <h4>Cantidad:</h4>
+                <div className="cantidad-controles">
+                  <button onClick={() => handleCambiarCantidad("decrementar")}>-</button>
+                  <span>{cantidad}</span>
+                  <button onClick={() => handleCambiarCantidad("incrementar")}>+</button>
                 </div>
               </div>
+
+              <button className="btn-añadir-carrito" onClick={handleAñadirCarrito}>
+                Añadir al Carrito
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      <Footer />
     </div>
-  )
-}
+  );
+};

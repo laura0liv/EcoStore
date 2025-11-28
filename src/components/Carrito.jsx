@@ -1,174 +1,107 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { FaTimes, FaTrash, FaShoppingCart } from 'react-icons/fa';
-import { getCarrito } from '../../api/getCarrito';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useCarrito } from '../provider/CarritoProvider';
-import axios from 'axios';
 import '../styles/css/Carrito.css';
 
 export const Carrito = ({ onCerrarCarrito, mostrarCarrito }) => {
+  const { verProductosCarrito, setVerProductosCarrito, contadorCarrito } = useCarrito();
 
-  // Usar el contexto del carrito
-  const { verProductosCarrito, setVerProductosCarrito, actualizarCarrito } = useCarrito();
-  
-  useEffect(() => {
-    actualizarCarrito();
-  }, [actualizarCarrito]);
+  // Función central para sincronizar carrito
+  const sincronizarCarrito = (nuevoCarrito) => {
+    setVerProductosCarrito(nuevoCarrito);
+  };
 
-  const handleEliminarProducto = async (productoId) => {
-    try {
-      // Si es un producto falso (ID empieza con 'fake-')
-      if (productoId.toString().startsWith('fake-')) {
-        const carritoFalso = JSON.parse(localStorage.getItem('carritoFalso') || '[]');
-        const nuevoCarritoFalso = carritoFalso.filter((producto) => producto.carrito_id !== productoId);
-        localStorage.setItem('carritoFalso', JSON.stringify(nuevoCarritoFalso));
-        
-        const nuevoCarrito = verProductosCarrito.filter((producto) => producto.carrito_id !== productoId);
-        setVerProductosCarrito(nuevoCarrito);
-      } else {
-        // Producto real - usar API
-        await axios.delete(`http://127.0.0.1:3001/eliminarProducto/${productoId}`);
-        const nuevoCarrito = verProductosCarrito.filter((producto) => producto.carrito_id !== productoId);
-        setVerProductosCarrito(nuevoCarrito);
-      }
-    } catch (error) {
-      console.error('Error al eliminar el producto del carrito', error);
-    }
-  }
-  
-  const handleActualizarCantidad = async (carritoId, nuevaCantidad) => {
-    try {
-      // Si es un producto falso (ID empieza con 'fake-')
-      if (carritoId.toString().startsWith('fake-')) {
-        const carritoFalso = JSON.parse(localStorage.getItem('carritoFalso') || '[]');
-        const index = carritoFalso.findIndex((producto) => producto.carrito_id === carritoId);
-        
-        if (index !== -1) {
-          carritoFalso[index].cantidad = nuevaCantidad;
-          localStorage.setItem('carritoFalso', JSON.stringify(carritoFalso));
-          
-          const nuevoCarrito = [...verProductosCarrito];
-          const carritoIndex = nuevoCarrito.findIndex((producto) => producto.carrito_id === carritoId);
-          if (carritoIndex !== -1) {
-            nuevoCarrito[carritoIndex].cantidad = nuevaCantidad;
-            setVerProductosCarrito(nuevoCarrito);
-          }
-        }
-      } else {
-        // Producto real - usar API
-        await axios.post('http://127.0.0.1:3001/actualizarCantidad', {
-            id: carritoId,
-          cantidad: nuevaCantidad
-        });
+  const eliminarProducto = (carrito_id) => {
+    const nuevo = verProductosCarrito.filter(p => p.carrito_id !== carrito_id);
+    sincronizarCarrito(nuevo);
+  };
 
-        const nuevoCarrito = [...verProductosCarrito];
-        const index = nuevoCarrito.findIndex((producto) => producto.carrito_id === carritoId);
+  const incrementar = (carrito_id) => {
+    const nuevo = verProductosCarrito.map(p =>
+      p.carrito_id === carrito_id ? { ...p, cantidad: p.cantidad + 1 } : p
+    );
+    sincronizarCarrito(nuevo);
+  };
 
-        if (index !== -1) {
-          nuevoCarrito[index].cantidad = nuevaCantidad;
-          setVerProductosCarrito(nuevoCarrito);
-        }
-      }
-    } catch (error) {
-      console.error('Error al actualizar el carrito', error);
+  const decrementar = (carrito_id) => {
+    const producto = verProductosCarrito.find(p => p.carrito_id === carrito_id);
+    if (producto && producto.cantidad > 1) {
+      const nuevo = verProductosCarrito.map(p =>
+        p.carrito_id === carrito_id ? { ...p, cantidad: p.cantidad - 1 } : p
+      );
+      sincronizarCarrito(nuevo);
+    } else {
+      eliminarProducto(carrito_id);
     }
   };
 
-  const handleIncrement = (productoId) => {
-    const nuevoCarrito = [...verProductosCarrito];
-    const index = nuevoCarrito.findIndex((producto) => producto.carrito_id === productoId);
-
-    if (index !== -1) {
-      const nuevaCantidad = nuevoCarrito[index].cantidad + 1;
-      handleActualizarCantidad(productoId, nuevaCantidad);
-    }
-  };
-
-  const handleDecrement = (productoId) => {
-    const nuevoCarrito = [...verProductosCarrito];
-    const index = nuevoCarrito.findIndex((producto) => producto.carrito_id === productoId);
-
-    if (index !== -1) {
-      const nuevaCantidad = nuevoCarrito[index].cantidad - 1;
-  
-      if (nuevaCantidad > 0) {
-        
-        handleActualizarCantidad(productoId, nuevaCantidad);
-      } else {
-        handleEliminarProducto(productoId);
-      }
-    }
-  };
-
- 
-  const subtotal = Array.isArray(verProductosCarrito)
-  ? verProductosCarrito.reduce((total, producto) => total + producto.cantidad * producto.precio, 0)
-  : 0;
-
-  const total = subtotal;
+  // CORREGIDO: Cálculo del total (usando price o precio)
+  const total = verProductosCarrito
+    .reduce((acc, p) => {
+      const precio = parseFloat(p.price || p.precio || 0);
+      const cantidad = p.cantidad || 1;
+      return acc + (precio * cantidad);
+    }, 0)
+    .toFixed(2);
 
   return (
-    <div className={`carrito-sidebar ${mostrarCarrito ? 'carrito-abierto' : 'carrito-cerrado'}`}>
-      {/* Overlay para cerrar el carrito */}
-      {mostrarCarrito && (
-        <div className="carrito-overlay" onClick={onCerrarCarrito}></div>
-      )}
-      
-      {/* Contenedor del sidebar */}
-      <div className="carrito-contenido" onClick={(e) => e.stopPropagation()}>
-        {/* Header del carrito */}
-        <div className='carrito-header'>
-          <h2>Mi Carrito</h2>
-          <button className='btn-cerrar' onClick={onCerrarCarrito}>
+    <div className={`carrito-sidebar ${mostrarCarrito ? 'carrito-abierto' : ''}`}>
+      {mostrarCarrito && <div className="carrito-overlay" onClick={onCerrarCarrito} />}
+
+      <div className="carrito-contenido" onClick={e => e.stopPropagation()}>
+        <div className="carrito-header">
+          <h2>Mi Carrito ({contadorCarrito})</h2>
+          <button className="btn-cerrar" onClick={onCerrarCarrito}>
             <FaTimes />
           </button>
         </div>
 
-        {/* Lista de productos */}
-        <div className='carrito-productos'>
-          {verProductosCarrito.length > 0 ? (
+        <div className="carrito-productos">
+          {verProductosCarrito.length === 0 ? (
+            <div className="carrito-vacio">
+              <FaShoppingCart size={60} />
+              <h3>Tu carrito está vacío</h3>
+              <p>¡Agrega productos increíbles!</p>
+              <Link to="/" onClick={onCerrarCarrito}>
+                <button className="btn-explorar">Explorar tienda</button>
+              </Link>
+            </div>
+          ) : (
             <ul>
-              {verProductosCarrito.map((producto) => {
-                // Manejar diferentes formatos de imagen
-                let imagen = '';
-                if (producto.imagen) {
-                  if (typeof producto.imagen === 'string') {
-                    try {
-                      const imagenArray = JSON.parse(producto.imagen);
-                      if (Array.isArray(imagenArray) && imagenArray.length > 0) {
-                        // Imagen de producto real
-                        imagen = imagenArray[0].startsWith('http') ? imagenArray[0] : 'http://127.0.0.1:3001/' + imagenArray[0];
-                      }
-                    } catch (e) {
-                      // Si no es JSON válido, usar directamente
-                      imagen = producto.imagen.startsWith('http') ? producto.imagen : 'http://127.0.0.1:3001/' + producto.imagen;
-                    }
-                  } else if (Array.isArray(producto.imagen)) {
-                    // Imagen ya es array
-                    imagen = producto.imagen[0];
-                  }
-                }
+              {verProductosCarrito.map(producto => {
+                const imagen = producto.image || producto.imagen?.[0] || 'https://via.placeholder.com/80';
 
                 return (
                   <li key={producto.carrito_id} className="producto-item">
-                    <div className='producto-imagen'>
-                      {imagen && <img src={imagen} alt={producto.nombre} />}
+                    <div className="producto-imagen">
+                      <img
+                        src={imagen}
+                        alt={producto.title || producto.nombre}
+                        onError={e => e.target.src = 'https://via.placeholder.com/80'}
+                      />
                     </div>
-                    <div className='producto-info'>
-                      <h4>{producto.nombre}</h4>
-                      <div className='producto-detalles'>
-                        <span className='talla'>Talla: {producto.nombre_talla}</span>
-                        <span className='precio'>${typeof producto.precio === 'number' ? producto.precio.toLocaleString() : producto.precio}</span>
+
+                    <div className="producto-info">
+                      <h4>{producto.title || producto.nombre}</h4>
+                      {producto.nombre_talla && (
+                        <span className="talla">Talla: {producto.nombre_talla}</span>
+                      )}
+
+                      <div className="cantidad-controles">
+                        <button onClick={() => decrementar(producto.carrito_id)}>-</button>
+                        <span>{producto.cantidad || 1}</span>
+                        <button onClick={() => incrementar(producto.carrito_id)}>+</button>
                       </div>
-                      <div className='cantidad-controles'>
-                        <button onClick={() => handleDecrement(producto.carrito_id)}>-</button>
-                        <span className='cantidad'>{producto.cantidad}</span>
-                        <button onClick={() => handleIncrement(producto.carrito_id)}>+</button>
-                      </div>
+
+                      <span className="precio">
+                        ${(parseFloat(producto.price || producto.precio || 0) * (producto.cantidad || 1)).toFixed(2)}
+                      </span>
                     </div>
-                    <button 
-                      className='btn-eliminar' 
-                      onClick={() => handleEliminarProducto(producto.carrito_id)}
+
+                    <button
+                      className="btn-eliminar"
+                      onClick={() => eliminarProducto(producto.carrito_id)}
                     >
                       <FaTrash />
                     </button>
@@ -176,40 +109,31 @@ export const Carrito = ({ onCerrarCarrito, mostrarCarrito }) => {
                 );
               })}
             </ul>
-          ) : (
-            <div className='carrito-vacio'>
-              <div className='icono-vacio'>
-                <FaShoppingCart />
-              </div>
-              <h3>Tu carrito está vacío</h3>
-              <p>¡Descubre nuestros productos increíbles!</p>
-              <Link to='/' onClick={onCerrarCarrito}>
-                <button className='btn-explorar'>Explorar productos</button>
-              </Link>
-            </div>
           )}
         </div>
 
-        {/* Footer del carrito */}
+        {/* Footer con total y botón de checkout */}
         {verProductosCarrito.length > 0 && (
-          <div className='carrito-footer'>
-            <div className='resumen-total'>
-              <div className='linea-total'>
-                <span>Subtotal:</span>
-                <span>${subtotal.toLocaleString()}</span>
-              </div>
-              <div className='linea-total total-final'>
+          <div className="carrito-footer">
+            <div className="resumen-total">
+              <div className="linea-total total-final">
                 <span>Total:</span>
-                <span>${total.toLocaleString()}</span>
+                <span className="precio-total">${total}</span>
               </div>
             </div>
-            <Link to='/checkout/cart' onClick={onCerrarCarrito}>
-              <button className='btn-pagar'>Proceder al pago</button>
+
+            <Link to="/checkout" onClick={onCerrarCarrito}>
+              <button className="btn-pagar">Ir al Checkout</button>
             </Link>
+
+            {/* BOTÓN "SEGUIR COMPRANDO" ELIMINADO (como pediste) */}
+            {/* Si en el futuro lo quieres de vuelta, descomenta esta línea: */}
+            {/* <button className="btn-seguir-comprando" onClick={onCerrarCarrito}>
+              Seguir comprando
+            </button> */}
           </div>
         )}
       </div>
     </div>
   );
 };
-  

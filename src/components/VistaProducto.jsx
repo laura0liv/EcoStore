@@ -3,7 +3,7 @@ import { FaShoppingCart } from 'react-icons/fa'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import axios from 'axios'
-import { getOneProducto, getReferencias, getTallas } from '../../api'
+//import { getOneProducto, getReferencias, getTallas } from '../../api'
 import { Header } from './layout/Header'
 
 

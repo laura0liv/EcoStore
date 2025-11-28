@@ -1,0 +1,113 @@
+/* src/styles/css/Checkout.css */
+.checkout-page {
+  padding: 40px 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.checkout-container h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+.resumen-carrito {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+}
+
+.item-resumen {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.item-resumen img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.total-final {
+  text-align: right;
+  font-size: 1.5rem;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 2px solid #333;
+}
+
+.precio-grande {
+  color: #e91e63;
+  font-weight: bold;
+}
+
+.botones-checkout {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.btn-confirmar {
+  background: #e91e63;
+  color: white;
+  padding: 14px 32px;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-cancelar {
+  background: #ccc;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Pantalla de confirmación */
+.checkout-confirmacion {
+  text-align: center;
+  padding: 60px 20px;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirmacion-card {
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  max-width: 500px;
+  width: 100%;
+}
+
+.confirmacion-card h1 {
+  color: #4caf50;
+  margin-bottom: 20px;
+}
+
+.detalle-orden strong {
+  font-size: 2rem;
+  color: #e91e63;
+}
+
+.btn-seguir-comprando {
+  margin-top: 30px;
+  background: #333;
+  color: white;
+  padding: 12px 30px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+}

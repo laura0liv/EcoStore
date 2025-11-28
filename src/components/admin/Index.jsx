@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { FaUserAlt } from 'react-icons/fa'
 import { Link} from 'react-router-dom'
-import { getGenero } from '../../../api/getGenero'
+//import { getGenero } from '../../../api/getGenero'
 import { Header } from '../layout/Header'
 
 

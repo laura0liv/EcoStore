@@ -1,45 +1,36 @@
+// src/provider/CarritoProvider.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getCarrito } from '../../api/getCarrito';
+import { getCarrito, guardarCarrito } from '../../api/getCarrito.js';
 
 const CarritoContext = createContext();
 
 export const useCarrito = () => {
-  const context = useContext(CarritoContext);
-  if (!context) {
-    throw new Error('useCarrito debe ser usado dentro de CarritoProvider');
-  }
-  return context;
+  const ctx = useContext(CarritoContext);
+  if (!ctx) throw new Error('useCarrito debe usarse dentro de CarritoProvider');
+  return ctx;
 };
 
 export const CarritoProvider = ({ children }) => {
   const [verProductosCarrito, setVerProductosCarrito] = useState([]);
-  const [contadorCarrito, setContadorCarrito] = useState(0);
 
-  // Función para actualizar el carrito
-  const actualizarCarrito = () => {
+  // Cargar carrito al iniciar
+  useEffect(() => {
     getCarrito(setVerProductosCarrito);
-  };
-
-  // Calcular contador cuando cambian los productos
-  useEffect(() => {
-    const totalProductos = verProductosCarrito.reduce((total, producto) => total + producto.cantidad, 0);
-    setContadorCarrito(totalProductos);
-  }, [verProductosCarrito]);
-
-  // Cargar carrito inicial
-  useEffect(() => {
-    actualizarCarrito();
   }, []);
 
-  const value = {
-    verProductosCarrito,
-    setVerProductosCarrito,
-    contadorCarrito,
-    actualizarCarrito
-  };
+  // Guardar automáticamente cada vez que cambie
+  useEffect(() => {
+    guardarCarrito(verProductosCarrito);
+  }, [verProductosCarrito]);
+
+  const contadorCarrito = verProductosCarrito.reduce((t, p) => t + (p.cantidad || 1), 0);
 
   return (
-    <CarritoContext.Provider value={value}>
+    <CarritoContext.Provider value={{
+      verProductosCarrito,
+      setVerProductosCarrito,
+      contadorCarrito,
+    }}>
       {children}
     </CarritoContext.Provider>
   );

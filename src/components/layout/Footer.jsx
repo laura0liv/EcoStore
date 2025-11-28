@@ -45,9 +45,10 @@ export const Footer = () => {
             <h4>Enlaces Rápidos</h4>
             <ul>
               <li><Link to="/">Inicio</Link></li>
-              <li><Link to="/productos/genero/1">Hombre</Link></li>
-              <li><Link to="/productos/genero/2">Mujer</Link></li>
-              <li><Link to="/productos/genero/3">Niños</Link></li>
+              <li><Link to={"/productos/categoria/men's%20clothing"}>MEN'S</Link></li>
+              <li><Link to={"/productos/categoria/women's%20clothing"}>WOMEN'S</Link></li>
+              <li><Link to='/productos/categoria/jewelery'>JEWELERY</Link></li>
+              <li><Link to='/productos/categoria/electronics'>ELECTRONICS</Link></li>
               <li><Link to="/ofertas">Ofertas</Link></li>
               <li><Link to="/nuevos">Nuevos Productos</Link></li>
             </ul>

@@ -2,7 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 import toast from 'react-hot-toast';
 import { FaUserAlt } from 'react-icons/fa'
-import { getGenero } from '../../../api/getGenero';
+//import { getGenero } from '../../../api/getGenero';
 import { useNavigate } from 'react-router-dom';
 
 export const NuevaCategoria = () => {

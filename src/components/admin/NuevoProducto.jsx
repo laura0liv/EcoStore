@@ -2,7 +2,7 @@ import axios from 'axios'
 import React, { useState } from 'react'
 import { FaUserAlt } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom';
-import { useCategoriaContext } from '../../provider/CategoriasProvider';
+//import { useCategoriaContext } from '../../provider/CategoriasProvider';
 import toast from 'react-hot-toast';
 import { Header } from '../layout/Header';
 
